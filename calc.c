@@ -1,7 +1,7 @@
 // Tokhirbek Akramov 251ADB079
 // https://github.com/tohir-cs/calc-lab-home
 // Compile with: gcc -O2 -Wall -Wextra -std=c17 -o calc calc.c -lm
-// Resources used: Gemini AI -- https://share.gemini.google/5HAMwiYzEvIU
+// Resources used: Gemini AI -- https://share.gemini.google/uaFUDmZXS502
 
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
@@ -55,22 +55,22 @@ static void set_error(Parser *p, size_t pos)
 //tokenizer tracking 1based character position in entire files
 static void next_token(Parser *p) 
 {
-    while (p->idx < p->len && (p->src[p->idx] == ' ' || p->src[p->idx] == '\t'))
+while (p->idx < p->len && (p->src[p->idx] == ' ' || p->src[p->idx] == '\t'))
     {
     p->idx++;
     }
 
-    if (p->idx >= p->len)
+if (p->idx >= p->len)
     {
     p->cur.type = TOK_EOL;
     p->cur.pos = p->len + 1;
-    return;
+return;
     }
 
 char c = p->src[p->idx];
 size_t start_pos = p->idx + 1;
 
-    if (c == '\n' || c == '\r')
+if (c == '\n' || c == '\r')
     {
     p->cur.type = TOK_EOL;
     p->cur.pos = start_pos;
@@ -84,16 +84,16 @@ size_t start_pos = p->idx + 1;
     p->cur.pos = start_pos;
     return;
     }
-    if (c == '-')
+if (c == '-')
     {
     p->idx++;
     p->cur.type = TOK_MINUS;
     p->cur.pos = start_pos;
     return;
     }
-    if (c == '*')
+if (c == '*')
     {
-        if (p->idx + 1 < p->len && p->src[p->idx + 1] == '*')
+    if (p->idx + 1 < p->len && p->src[p->idx + 1] == '*')
         {
         p->idx += 2;
         p->cur.type = TOK_POW;
@@ -106,7 +106,7 @@ size_t start_pos = p->idx + 1;
     return;
     }
 
-    if (c == '/')
+ if (c == '/')
     {
     p->idx++;
     p->cur.type = TOK_DIV;
@@ -114,7 +114,7 @@ size_t start_pos = p->idx + 1;
     return;
     }
 
-    if (c == '(')
+if (c == '(')
     {
     p->idx++;
     p->cur.type = TOK_LPAREN;
@@ -122,7 +122,7 @@ size_t start_pos = p->idx + 1;
     return;
     }
 
-    if (c == ')')
+ if (c == ')')
     {
     p->idx++;
     p->cur.type = TOK_RPAREN;
@@ -130,10 +130,10 @@ size_t start_pos = p->idx + 1;
     return;
     }
 
-    if (isdigit((unsigned char)c))
+if (isdigit((unsigned char)c))
     {
-    long long val = 0;
-        while (p->idx < p->len && isdigit((unsigned char)p->src[p->idx])) 
+long long val = 0;
+    while (p->idx < p->len && isdigit((unsigned char)p->src[p->idx])) 
         {
         val = val * 10 + (p->src[p->idx] - '0');
         p->idx++;
@@ -141,7 +141,7 @@ size_t start_pos = p->idx + 1;
     p->cur.type = TOK_INT;
     p->cur.pos = start_pos;
     p->cur.val = val;
-    return;
+return;
     }
 
     p->cur.type = TOK_INVALID;
@@ -154,13 +154,13 @@ static long long parse_expr(Parser *p);
 //handle numbers and parenthesis
 static long long parse_factor(Parser *p) 
 {
-    if (p->err_pos != 0) return 0;
+if (p->err_pos != 0) return 0;
 
     if (p->cur.type == TOK_INT)
     {
     long long val = p->cur.val;
     next_token(p);
-    return val;
+return val;
     }
 
     if (p->cur.type == TOK_LPAREN)
@@ -169,15 +169,15 @@ static long long parse_factor(Parser *p)
     long long val = parse_expr(p);
     if (p->err_pos != 0) return 0;
 
-        if (p->cur.type == TOK_RPAREN)
+if (p->cur.type == TOK_RPAREN)
         {
         next_token(p);
-        return val;
+    return val;
         } 
-        else 
+else 
         {
         set_error(p, p->cur.pos);
-        return 0;
+     return 0;
         }
     }
 
@@ -191,7 +191,7 @@ static long long ipow(long long base, long long exp)
     long long res = 1;
     while (exp > 0)
     {
-        if (exp % 2 == 1) res *= base;
+    if (exp % 2 == 1) res *= base;
         base *= base;
         exp /= 2;
     }
@@ -202,19 +202,19 @@ static long long ipow(long long base, long long exp)
 static long long parse_power(Parser *p) 
 {
     long long left = parse_factor(p);
-    if (p->err_pos != 0) return left;
+if (p->err_pos != 0) return left;
 
-    if (p->cur.type == TOK_POW)
+ if (p->cur.type == TOK_POW)
     {
     next_token(p);
     size_t rhs_pos = p->cur.pos;
     long long right = parse_power(p);
-    if (p->err_pos != 0) return left;
+if (p->err_pos != 0) return left;
 
-        if (right < 0)
+if (right < 0)
         {
         set_error(p, rhs_pos);
-        return left;
+    return left;
         }
     left = ipow(left, right);
     }
@@ -222,15 +222,15 @@ static long long parse_power(Parser *p)
 }
 
 //AI: prompt "how to parse * and / with higher precedence than + and - and track character position in C without external libraries"
-//link: https://share.gemini.google/5HAMwiYzEvIU
+//link: https://share.gemini.google/uaFUDmZXS502
 //used recursive descent hierarchy: parse_term handles * and / before returning to parse_expr (+ and -)
 
 static long long parse_term(Parser *p) 
 {
     long long left = parse_power(p);
-    if (p->err_pos != 0) return left;
+if (p->err_pos != 0) return left;
 
-    while (p->cur.type == TOK_MUL || p->cur.type == TOK_DIV)
+while (p->cur.type == TOK_MUL || p->cur.type == TOK_DIV)
     {
     TokenType op = p->cur.type;
     next_token(p);
@@ -239,21 +239,21 @@ static long long parse_term(Parser *p)
     long long right = parse_power(p);
     if (p->err_pos != 0) return left;
 
-        if (op == TOK_MUL) 
+if (op == TOK_MUL) 
         {
         left *= right;
         } 
-        else 
+    else 
         {
-            if (right == 0) 
+if (right == 0) 
             {
             set_error(p, rhs_pos);
-            return left;
+return left;
             }
-        left /= right;
+    left /= right;
         }
     }
-    return left;
+return left;
 }
 
 static long long parse_expr(Parser *p) 
@@ -266,14 +266,14 @@ static long long parse_expr(Parser *p)
     TokenType op = p->cur.type;
     next_token(p);
 
-    long long right = parse_term(p);
+long long right = parse_term(p);
     if (p->err_pos != 0) return left;
 
-        if (op == TOK_PLUS) 
+    if (op == TOK_PLUS) 
         {
         left += right;
         } 
-        else 
+    else 
         {
         left -= right;
         }
@@ -282,7 +282,7 @@ static long long parse_expr(Parser *p)
 }
 
 //AI: prompt "how do i extract filename without directory path and without .txt extension from a string in C"
-//link: https://share.gemini.google/5HAMwiYzEvIU
+//link: https://share.gemini.google/uaFUDmZXS502
 
 static void get_basename_no_ext(const char *path, char *base, size_t sz) 
 {
@@ -291,7 +291,7 @@ static void get_basename_no_ext(const char *path, char *base, size_t sz)
     size_t len = strlen(fname);
     if (len >= 4 && strcmp(fname + len - 4, ".txt") == 0)
     {
-        len -= 4;
+    len -= 4;
     }
     if (len >= sz) len = sz - 1;
     strncpy(base, fname, len);
@@ -310,7 +310,7 @@ static char *read_all(const char *path, size_t *out_len)
     if (!buf) 
     {
         fclose(f);
-        return NULL;
+    return NULL;
     }
     size_t n = fread(buf, 1, sz, f);
     buf[n] = '\0';
@@ -357,26 +357,26 @@ static int process_single_file(const char *infile, const char *outdir)
 
     while (p.idx < p.len)
     {
-        while (p.idx < p.len && (p.src[p.idx] == ' ' || p.src[p.idx] == '\t')) 
-        {
-            p.idx++;
-        }
-
-        if (p.idx < p.len && (p.src[p.idx] == '\n' || p.src[p.idx] == '\r')) 
+    while (p.idx < p.len && (p.src[p.idx] == ' ' || p.src[p.idx] == '\t')) 
         {
         p.idx++;
-        continue;
         }
 
-        //skip whole comment line starting with #
-        if (p.idx < p.len && p.src[p.idx] == '#') 
+    if (p.idx < p.len && (p.src[p.idx] == '\n' || p.src[p.idx] == '\r')) 
         {
-            while (p.idx < p.len && p.src[p.idx] != '\n') 
+            p.idx++;
+    continue;
+        }
+
+//skip whole comment line starting with #
+    if (p.idx < p.len && p.src[p.idx] == '#') 
+        {
+         while (p.idx < p.len && p.src[p.idx] != '\n') 
             {
                 p.idx++;
             }
-            if (p.idx < p.len && p.src[p.idx] == '\n') p.idx++;
-            continue;
+        if (p.idx < p.len && p.src[p.idx] == '\n') p.idx++;
+    continue;
         }
 
         if (p.idx >= p.len) break;
@@ -384,21 +384,21 @@ static int process_single_file(const char *infile, const char *outdir)
         next_token(&p);
         long long val = parse_expr(&p);
 
-        if (p.err_pos == 0 && p.cur.type != TOK_EOL) 
+    if (p.err_pos == 0 && p.cur.type != TOK_EOL) 
         {
             set_error(&p, p.cur.pos);
         }
 
-        if (p.err_pos != 0) break;
+if (p.err_pos != 0) break;
 
-        char temp[64];
-        int w = snprintf(temp, sizeof(temp), "%lld\n", val);
+    char temp[64];
+    int w = snprintf(temp, sizeof(temp), "%lld\n", val);
         memcpy(out_buf + out_len, temp, w);
         out_len += w;
 
-        while (p.idx < p.len && p.src[p.idx] != '\n') 
+    while (p.idx < p.len && p.src[p.idx] != '\n') 
         {
-            p.idx++;
+        p.idx++;
         }
         if (p.idx < p.len && p.src[p.idx] == '\n') 
         {
@@ -406,17 +406,17 @@ static int process_single_file(const char *infile, const char *outdir)
         }
     }
 
-    FILE *fout = fopen(outpath, "w");
+FILE *fout = fopen(outpath, "w");
     if (!fout) 
     {
-        free(src);
-        free(out_buf);
-        return 1;
+    free(src);
+    free(out_buf);
+    return 1;
     }
 
     if (p.err_pos != 0)
     {
-        fprintf(fout, "ERROR:%zu\n", p.err_pos);
+    fprintf(fout, "ERROR:%zu\n", p.err_pos);
     } 
     else if (out_len > 0)
     {
@@ -426,18 +426,19 @@ static int process_single_file(const char *infile, const char *outdir)
     fclose(fout);
     free(src);
     free(out_buf);
-    return 0;
+return 0;
 }
 
 //sort filenames
 static int cmp_strings(const void *a, const void *b)
 {
-    return strcmp(*(const char **)a, *(const char **)b);
+return strcmp(*(const char **)a, *(const char **)b);
 }
 
 //AI: prompt "how to read all .txt files from a directory and parse CLI options like -d, --dir, -o, --output-dir in C POSIX"
-//link: https://share.gemini.google/5HAMwiYzEvIU
-//scan directory, collect txt files and run each
+//link: https://share.gemini.google/uaFUDmZXS502
+//scan directory, collect txt files and run each of
+
 
 static int process_directory(const char *indir, const char *outdir)
 {
@@ -448,7 +449,6 @@ static int process_directory(const char *indir, const char *outdir)
         return 1;
     }
 
-
     char *files[512];
     int count = 0;
     struct dirent *ent;
@@ -456,14 +456,13 @@ static int process_directory(const char *indir, const char *outdir)
     while ((ent = readdir(d)) != NULL)
     {
         size_t n = strlen(ent->d_name);
-        if (n >= 4 && strcmp(ent->d_name + n - 4, ".txt") == 0)
+    if (n >= 4 && strcmp(ent->d_name + n - 4, ".txt") == 0)
         {
-    files[count] = strdup(ent->d_name);
-         count++;
-    if (count >= 512) break;
+            files[count] = strdup(ent->d_name);
+        count++;
+        if (count >= 512) break;
         }
     }
-
     closedir(d);
 
     qsort(files, count, sizeof(char *), cmp_strings);
@@ -497,15 +496,15 @@ int main(int argc, char **argv)
     {
         if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output-dir") == 0) 
         {
-            if (i + 1 < argc) outdir = argv[++i];
+        if (i + 1 < argc) outdir = argv[++i];
         } 
-        else if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--dir") == 0) 
+    else if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--dir") == 0) 
         {
-            if (i + 1 < argc) indir = argv[++i];
+        if (i + 1 < argc) indir = argv[++i];
         } 
-        else if (argv[i][0] != '-') 
+    else if (argv[i][0] != '-') 
         {
-            infile = argv[i];
+        infile = argv[i];
         }
     }
 
