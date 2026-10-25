@@ -1,7 +1,7 @@
-//Tokhirbek Akramov 251ADB079
-//https://github.com/tohir-cs/calc-lab-home
-//Compile with: gcc -O2 -Wall -Wextra -std=c17 -o calc calc.c -lm
-//Resources used: Gemini AI -- https://share.gemini.google/5HAMwiYzEvIU
+// Tokhirbek Akramov 251ADB079
+// https://github.com/tohir-cs/calc-lab-home
+// Compile with: gcc -O2 -Wall -Wextra -std=c17 -o calc calc.c -lm
+// Resources used: Gemini AI -- https://share.gemini.google/5HAMwiYzEvIU
 
 #define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
@@ -9,6 +9,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <sys/stat.h>
+#include <dirent.h>
 
 #define STUDENT_NAME "tokhirbek"
 #define STUDENT_LASTNAME "akramov"
@@ -76,18 +77,6 @@ size_t start_pos = p->idx + 1;
     return;
     }
 
-//skip comment till line end
-    if (c == '#')
-    {
-        while (p->idx < p->len && p->src[p->idx] != '\n')
-        {
-        p->idx++;
-        }
-    p->cur.type = TOK_EOL;
-    p->cur.pos = p->idx + 1;
-    return;
-    }
-
     if (c == '+')
     {
     p->idx++;
@@ -141,8 +130,6 @@ size_t start_pos = p->idx + 1;
     return;
     }
 
-
-
     if (isdigit((unsigned char)c))
     {
     long long val = 0;
@@ -163,8 +150,6 @@ size_t start_pos = p->idx + 1;
 }
 
 static long long parse_expr(Parser *p);
-
-
 
 //handle numbers and parenthesis
 static long long parse_factor(Parser *p) 
@@ -200,8 +185,6 @@ static long long parse_factor(Parser *p)
     return 0;
 }
 
-
-
 //integer power loop
 static long long ipow(long long base, long long exp) 
 {
@@ -214,7 +197,6 @@ static long long ipow(long long base, long long exp)
     }
     return res;
 }
-
 
 //right associative power
 static long long parse_power(Parser *p) 
@@ -337,29 +319,9 @@ static char *read_all(const char *path, size_t *out_len)
     return buf;
 }
 
-int main(int argc, char **argv) 
+//process single input file and write output
+static int process_single_file(const char *infile, const char *outdir)
 {
-    const char *outdir = NULL;
-    const char *infile = NULL;
-
-    for (int i = 1; i < argc; i++)
-    {
-        if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output-dir") == 0) 
-        {
-            if (i + 1 < argc) outdir = argv[++i];
-        } 
-        else if (argv[i][0] != '-') 
-        {
-        infile = argv[i];
-        }
-    }
-
-    if (!infile)
-    {
-        fprintf(stderr, "Usage: %s [-o OUTDIR] input.txt\n", argv[0]);
-        return 1;
-    }
-
     size_t file_len = 0;
     char *src = read_all(infile, &file_len);
     if (!src) 
@@ -383,6 +345,7 @@ int main(int argc, char **argv)
     char outpath[1024];
     snprintf(outpath, sizeof(outpath), "%s/%s_%s_%s_%s.txt",
              outdir, base, STUDENT_NAME, STUDENT_LASTNAME, STUDENT_ID);
+
     Parser p;
     p.src = src;
     p.len = file_len;
@@ -401,11 +364,11 @@ int main(int argc, char **argv)
 
         if (p.idx < p.len && (p.src[p.idx] == '\n' || p.src[p.idx] == '\r')) 
         {
-            p.idx++;
-            continue;
+        p.idx++;
+        continue;
         }
 
- //skip blank and comment line
+        //skip whole comment line starting with #
         if (p.idx < p.len && p.src[p.idx] == '#') 
         {
             while (p.idx < p.len && p.src[p.idx] != '\n') 
@@ -464,4 +427,97 @@ int main(int argc, char **argv)
     free(src);
     free(out_buf);
     return 0;
+}
+
+//sort filenames
+static int cmp_strings(const void *a, const void *b)
+{
+    return strcmp(*(const char **)a, *(const char **)b);
+}
+
+//AI: prompt "how to read all .txt files from a directory and parse CLI options like -d, --dir, -o, --output-dir in C POSIX"
+//link: https://share.gemini.google/5HAMwiYzEvIU
+//scan directory, collect txt files and run each
+
+static int process_directory(const char *indir, const char *outdir)
+{
+    DIR *d = opendir(indir);
+    if (!d)
+    {
+        fprintf(stderr, "Cannot open directory %s\n", indir);
+        return 1;
+    }
+
+
+    char *files[512];
+    int count = 0;
+    struct dirent *ent;
+
+    while ((ent = readdir(d)) != NULL)
+    {
+        size_t n = strlen(ent->d_name);
+        if (n >= 4 && strcmp(ent->d_name + n - 4, ".txt") == 0)
+        {
+    files[count] = strdup(ent->d_name);
+         count++;
+    if (count >= 512) break;
+        }
+    }
+
+    closedir(d);
+
+    qsort(files, count, sizeof(char *), cmp_strings);
+
+    char def_outdir[512];
+    if (!outdir) 
+    {
+    char dir_base[256];
+    get_basename_no_ext(indir, dir_base, sizeof(dir_base));
+    snprintf(def_outdir, sizeof(def_outdir), "%s_%s_%s", dir_base, STUDENT_NAME, STUDENT_ID);
+    outdir = def_outdir;
+    }
+
+    for (int i = 0; i < count; i++) 
+    {
+    char filepath[1024];
+    snprintf(filepath, sizeof(filepath), "%s/%s", indir, files[i]);
+    process_single_file(filepath, outdir);
+    free(files[i]);
+    }
+    return 0;
+}
+
+int main(int argc, char **argv) 
+{
+    const char *outdir = NULL;
+    const char *indir = NULL;
+    const char *infile = NULL;
+
+    for (int i = 1; i < argc; i++) 
+    {
+        if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output-dir") == 0) 
+        {
+            if (i + 1 < argc) outdir = argv[++i];
+        } 
+        else if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--dir") == 0) 
+        {
+            if (i + 1 < argc) indir = argv[++i];
+        } 
+        else if (argv[i][0] != '-') 
+        {
+            infile = argv[i];
+        }
+    }
+
+    if (!indir && !infile) 
+    {
+    fprintf(stderr, "Usage: %s [-o OUTDIR] [-d INDIR] [input.txt]\n", argv[0]);
+    return 1;
+    }
+
+    if (indir) 
+    {
+    return process_directory(indir, outdir);
+    }
+    return process_single_file(infile, outdir);
 }
